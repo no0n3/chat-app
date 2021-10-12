@@ -1,0 +1,63 @@
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+    ports:
+      - 5433:5432
+  message_broker:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - 5673:5672
+      - 15672:15672
+  load_balancer:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 81:80
+    depends_on:
+      - web1
+      - web2
+      - web3
+  web1:
+    image: chat-app-be
+    # build: .
+    command: ["./chat-app.vi"]
+    # ports:
+    #   - 1122:1122
+    volumes:
+      - uploadsv:/code/uploads
+    # volumes:
+    #   - /home/velizar/WorkspaceTesting/chat-app-be/uploads:/code/uploads
+    depends_on:
+      - db
+      - message_broker
+  web2:
+    image: chat-app-be
+    # build: .
+    command: ["./chat-app.vi"]
+    # ports:
+    #   - 1123:1122
+    volumes:
+      - uploadsv:/code/uploads
+    # volumes:
+    #   - /home/velizar/WorkspaceTesting/chat-app-be/uploads:/code/uploads
+    depends_on:
+      - db
+      - message_broker
+  web3:
+    image: chat-app-be
+    # build: .
+    command: ["./chat-app.vi"]
+    # ports:
+    #   - 1124:1122
+    volumes:
+      - uploadsv:/code/uploads
+      # - /home/velizar/WorkspaceTesting/chat-app-be/uploads:/code/uploads
+    depends_on:
+      - db
+      - message_broker
+volumes:
+  uploadsv:
