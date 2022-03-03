@@ -1,9 +1,9 @@
-import axios from "axios";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useHistory, Link } from "react-router-dom";
 import { TextField, Button, Typography, CircularProgress } from '@material-ui/core';
-import { AuthContext } from "../store/auth-context";
+import { AuthContext } from "../store/AuthContext";
 import { isValidEmail } from "../utils/utils";
+import { signup } from "../api/api";
 
 const FIELDS = ['email', 'name', 'username', 'password', 'confirmPassword'];
 
@@ -60,9 +60,7 @@ export default function Signup() {
   }, [email, name, username, password, confirmPassword]);
 
   const onSignup = () => {
-    if (loading) {
-      return;
-    }
+    if (loading) return;
     if (Object.keys(errors).some(field => errors[field])) {
       markAsTouched();
 
@@ -78,7 +76,7 @@ export default function Signup() {
       username
     };
 
-    axios.post(`${process.env.REACT_APP_ENDPOINT}/api/sign-up`, payload)
+    signup(payload)
       .then(result => result.data)
       .then((result: any) => {
         const token = result.token;

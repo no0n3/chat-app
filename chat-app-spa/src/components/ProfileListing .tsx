@@ -1,8 +1,8 @@
 import { Input } from "@material-ui/core";
 import { useContext, useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
-import { AuthContext } from "../store/auth-context";
-import { get } from "../utils/http";
+import { getProfiles } from "../api/api";
+import { AuthContext } from "../store/AuthContext";
 import UserItem from "./UserItem";
 
 export default function ProfileListing() {
@@ -25,7 +25,7 @@ export default function ProfileListing() {
   }, [userFilter, users]);
 
   useEffect(() => {
-    get('find', token)
+    getProfiles(token)
       .then(result => {
         setUsers(result);
         setLoading(false);

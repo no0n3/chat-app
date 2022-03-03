@@ -1,8 +1,8 @@
 import { Button, CircularProgress } from "@material-ui/core";
 import { useCallback, useContext, useState } from "react";
 import { useHistory } from "react-router";
-import { AuthContext } from "../store/auth-context";
-import { post } from "../utils/http";
+import { addContact, removeContact } from "../api/api";
+import { AuthContext } from "../store/AuthContext";
 
 export default function UserItem(props: any) {
   const { user, onAddContact, onRemoveContact } = props;
@@ -10,18 +10,12 @@ export default function UserItem(props: any) {
   const history = useHistory();
   const { token, userId, logout } = useContext(AuthContext);
 
-  const addContact = useCallback(() => {
-    if (loading) {
-      return;
-    }
+  const onAddContactC = useCallback(() => {
+    if (loading) return;
 
     setLoading(true);
 
-    post({
-      path: `user/${user.Id}/add-contact`,
-      token,
-      payload: {}
-    })
+    addContact(user.Id, token)
       .then(result => {
         setLoading(false);
         onAddContact(user.Id);
@@ -37,18 +31,12 @@ export default function UserItem(props: any) {
       });
   }, [user, loading, onAddContact, token]);
 
-  const removeContact = useCallback(() => {
-    if (loading) {
-      return;
-    }
+  const removeContactC = useCallback(() => {
+    if (loading) return;
 
     setLoading(true);
 
-    post({
-      path: `user/${user.Id}/remove-contact`,
-      token,
-      payload: {}
-    })
+    removeContact(user.Id, token)
       .then(result => {
         setLoading(false);
         onRemoveContact(user.Id);
@@ -81,12 +69,12 @@ export default function UserItem(props: any) {
         <div style={{ marginTop: 5 }}>{user.Description}</div>
       </div>
       {!isLoggedUser && !user.IsContact && (
-        <Button onClick={() => addContact()} disabled={loading}>
+        <Button onClick={onAddContactC} disabled={loading}>
           {loading && <CircularProgress size={20} style={{ marginRight: 5 }}></CircularProgress>}
           Add</Button>
       )}
       {!isLoggedUser && user.IsContact && (
-        <Button onClick={() => removeContact()} disabled={loading}>
+        <Button onClick={removeContactC} disabled={loading}>
           {loading && <CircularProgress size={20} style={{ marginRight: 5 }}></CircularProgress>}
           Remove
         </Button>

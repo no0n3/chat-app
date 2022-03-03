@@ -1,30 +1,40 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useHistory } from "react-router-dom";
-import { AuthContext } from "../store/auth-context";
-import { get } from "../utils/http";
+import { AuthContext } from "../store/AuthContext";
 import { Input } from '@material-ui/core';
 import { Reply } from '@material-ui/icons';
-import { WsContext } from "../store/ws-context";
+import useOnWsMessage from "../hooks/useOnWsMessage";
+import { getChats } from "../api/api";
+import { MessageType } from "../store/WsContext";
 
 export default function ChatListing() {
   const [loading, setLoading] = useState(true);
-  const [newMessage, setNewMessage] = useState<any>();
   const [users, setUsers] = useState<any[]>([]);
   const { token, logout } = useContext(AuthContext);
-  const { subject } = useContext(WsContext);
   const history = useHistory();
 
-  useEffect(() => {
-    const sub = subject.subscribe((msg: any) => {
-      if (msg.Type !== 'msg') {
-        return;
-      }
+  const usersRef = useRef<any[]>();
 
-      setNewMessage(msg.Payload);
+  useOnWsMessage(({ Type, Payload }: MessageType) => {
+    if (Type !== 'msg') return;
+
+    if (!Payload || !usersRef.current) return;
+
+    const newUsers: any[] = [];
+    usersRef.current.forEach(user => {
+      if (user.ChatId === Payload.ChatId) {
+        newUsers.push({
+          ...user,
+          LastMessage: { ...Payload }
+        });
+      } else {
+        newUsers.push({ ...user });
+      }
     });
 
-    return () => sub.unsubscribe();
-  }, []);
+    usersRef.current = newUsers;
+    setUsers(newUsers);
+  });
 
   const [filteredUsers, setFilteredUsers] = useState<any>([]);
   const [userFilter, setUserFilter] = useState<string>('');
@@ -43,8 +53,9 @@ export default function ChatListing() {
   }, [userFilter, users]);
 
   useEffect(() => {
-    get(`chat`, token)
+    getChats(token)
       .then(result => {
+        usersRef.current = result;
         setUsers(result);
         setLoading(false);
       })
@@ -56,27 +67,6 @@ export default function ChatListing() {
         }
       });
   }, []);
-
-  useEffect(() => {
-    if (!newMessage) {
-      return;
-    }
-    const newUsers: any[] = [];
-    users.forEach(user => {
-      if (user.ChatId === newMessage.Payload.ChatId) {
-        newUsers.push({
-          ...user,
-          LastMessage: { ...newMessage.Payload }
-        });
-      } else {
-        newUsers.push({ ...user });
-      }
-
-      setUsers(newUsers);
-    });
-
-    setNewMessage(null);
-  }, [users, newMessage]);
 
   if (loading) {
     return (

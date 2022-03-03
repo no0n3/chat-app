@@ -33,7 +33,7 @@ export default function AuthContextProvider(props: any) {
       token,
       userId,
       isLoggedIn: !!token,
-      login: (newToken: string, newUserId: string) => {
+      loginUser: (newToken: string, newUserId: string) => {
         setToken(newToken);
         setUserId(newUserId);
       },

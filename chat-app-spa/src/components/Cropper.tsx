@@ -2,8 +2,8 @@ import { Button, CircularProgress } from "@material-ui/core";
 import Cropper from "cropperjs";
 import { useContext, useEffect, useRef, useState } from "react";
 import { useHistory } from "react-router";
-import { AuthContext } from "../store/auth-context";
-import { post } from "../utils/http";
+import { uploadProfileImage } from "../api/api";
+import { AuthContext } from "../store/AuthContext";
 
 export default function CustCropper(props: any) {
   const [cropper, setCropper] = useState<Cropper | null>(null);
@@ -14,9 +14,8 @@ export default function CustCropper(props: any) {
   const { src, closeModal } = props;
 
   const handleSave = () => {
-    if (saving) {
-      return;
-    }
+    if (saving) return;
+
     setSaving(true);
 
     const canvas = cropper?.getCroppedCanvas();
@@ -25,14 +24,7 @@ export default function CustCropper(props: any) {
     const formData = new FormData;
     formData.append('image', file);
 
-    post({
-      path: 'upload-profile-image',
-      token,
-      payload: formData,
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+    uploadProfileImage(formData, token)
       .then(response => {
         closeModal(response.mediaPath);
       })
@@ -64,9 +56,7 @@ export default function CustCropper(props: any) {
   };
 
   useEffect(() => {
-    if (!src) {
-      return;
-    }
+    if (!src) return;
 
     setCropper(new Cropper(cropperImageRef.current as any, {
       zoomable: false,
@@ -75,7 +65,7 @@ export default function CustCropper(props: any) {
   }, [src]);
 
   if (!src) {
-    return (<></>);
+    return null;
   }
 
   return (

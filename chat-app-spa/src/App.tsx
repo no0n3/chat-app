@@ -7,7 +7,7 @@ import Layout from './components/Layout';
 import ContactListing from './components/ContactListing';
 import Login from './components/Login';
 import { useContext } from 'react';
-import { AuthContext } from './store/auth-context';
+import { AuthContext } from './store/AuthContext';
 import Signup from './components/Signup';
 
 function App() {

@@ -1,7 +1,7 @@
 import { Link, useHistory } from "react-router-dom";
 import { Button, CircularProgress } from '@material-ui/core';
 import { useContext, useState } from "react";
-import { AuthContext } from "../store/auth-context";
+import { AuthContext } from "../store/AuthContext";
 import { post } from "../utils/http";
 
 export default function Layout(props: any) {
@@ -10,9 +10,8 @@ export default function Layout(props: any) {
   const history = useHistory();
 
   const onLogout = () => {
-    if (logingOut) {
-      return;
-    }
+    if (logingOut) return;
+
     setLogingOut(true);
 
     post({

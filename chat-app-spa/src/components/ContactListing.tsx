@@ -1,29 +1,40 @@
 import { useContext, useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
-import { AuthContext } from "../store/auth-context";
-import { get } from "../utils/http";
+import { getContacts } from "../api/api";
+import { AuthContext } from "../store/AuthContext";
 import UserItem from "./UserItem";
 
-export default function ContactListing() {
+function useGetUsers(): [any[], (users: any[]) => void, boolean] {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<any[]>([]);
+
   const { token, logout } = useContext(AuthContext);
   const history = useHistory();
 
   useEffect(() => {
-    get('contacts', token)
+    getContacts(token)
       .then(result => {
         setUsers(result);
-        setLoading(false);
       })
       .catch((e) => {
         const errorData = e?.toJSON();
         if (errorData.status === 401) {
           logout();
           history.push('/login');
+        } else {
+          setUsers([]);
         }
+      })
+      .finally(() => {
+        setLoading(false);
       });
   }, []);
+
+  return [users, setUsers, loading];
+}
+
+export default function ContactListing() {
+  const [users, setUsers, loading] = useGetUsers();
 
   return (
     <div style={{

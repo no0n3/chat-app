@@ -1,9 +1,9 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
-import { AuthContext } from '../store/auth-context';
-import { get, post } from '../utils/http';
+import { AuthContext } from '../store/AuthContext';
 import { Button, CircularProgress, Dialog } from '@material-ui/core';
 import CustCropper from './Cropper';
+import { addContact, getUser, removeContact } from '../api/api';
 
 export default function Profile() {
   const [user, setUser] = useState<any>({});
@@ -19,7 +19,7 @@ export default function Profile() {
   const params: any = useParams();
 
   useEffect(() => {
-    get(`user/${params.id}`, token)
+    getUser(params.id, token)
       .then(result => {
         setUser(result);
         setLoading(false);
@@ -35,18 +35,12 @@ export default function Profile() {
       });
   }, []);
 
-  const addContact = useCallback(() => {
-    if (loadingContact) {
-      return;
-    }
+  const onAddContact = useCallback(() => {
+    if (loadingContact) return;
 
     setLoadingContact(true);
 
-    post({
-      path: `user/${user.Id}/add-contact`,
-      token,
-      payload: {}
-    })
+    addContact(user.Id, token)
       .then(result => {
         setLoadingContact(false);
         setUser({
@@ -65,18 +59,12 @@ export default function Profile() {
       });
   }, [user, loadingContact]);
 
-  const removeContact = useCallback(() => {
-    if (loadingContact) {
-      return;
-    }
+  const onRemoveContact = useCallback(() => {
+    if (loadingContact) return;
 
     setLoadingContact(true);
 
-    post({
-      path: `user/${user.Id}/remove-contact`,
-      token,
-      payload: {}
-    })
+    removeContact(user.Id, token)
       .then(result => {
         setLoadingContact(false);
         setUser({
@@ -111,22 +99,16 @@ export default function Profile() {
   };
 
   const openUpload = () => {
-    if (userId !== user.Id) {
-      return;
-    }
+    if (userId !== user.Id) return;
     const inp = ref?.current as any;
-    if (!inp) {
-      return;
-    }
+    if (!inp) return;
 
     inp.click();
   };
 
   const onFileChange = () => {
     const inp = ref?.current as any;
-    if (!inp) {
-      return;
-    }
+    if (!inp) return;
 
     const image = inp.files[0];
 
@@ -155,7 +137,7 @@ export default function Profile() {
           position: 'relative'
         }}>
           <img src={user.Image} alt={user.Name} style={{ width: 100, display: 'block' }} crossOrigin="anonymous" />
-          {isLoggedUser && (<div onClick={() => openUpload()} style={{
+          {isLoggedUser && (<div onClick={openUpload} style={{
             backgroundColor: 'rgba(0, 0, 0, .5)',
             color: '#fff',
             textAlign: 'center',
@@ -175,13 +157,13 @@ export default function Profile() {
 
           <div>
             {!user.IsContact && !isLoggedUser && (
-              <Button onClick={() => addContact()} disabled={loadingContact}>
+              <Button onClick={onAddContact} disabled={loadingContact}>
                 {loadingContact && <CircularProgress size={20} style={{ marginRight: 5 }}></CircularProgress>}
                 Add contact
               </Button>
             )}
             {user.IsContact && !isLoggedUser && (
-              <Button onClick={() => removeContact()} disabled={loadingContact}>
+              <Button onClick={onRemoveContact} disabled={loadingContact}>
                 {loadingContact && <CircularProgress size={20} style={{ marginRight: 5 }}></CircularProgress>}
                 Remove contact
               </Button>

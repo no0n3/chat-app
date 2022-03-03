@@ -6,12 +6,13 @@ import {
   Send,
   ImageOutlined,
 } from '@material-ui/icons';
-import { buildMessage, TYPE_MESSAGE } from "../WsUtils";
-import { get, post } from "../utils/http";
-import { AuthContext } from "../store/auth-context";
-import { WsContext } from "../store/ws-context";
+import { TYPE_MESSAGE } from "../WsUtils";
+import { AuthContext } from "../store/AuthContext";
+import { MessageType, WsContext } from "../store/WsContext";
 import ImagePicker from "./ImagePicker";
-import GalleryModal from "./GallryModal";
+import GalleryModal from "./GalleryModal";
+import useOnWsMessage from "../hooks/useOnWsMessage";
+import { getChatMessages, getChat, uploadMedia } from "../api/api";
 
 export default function Chat() {
   const [loading, setLoading] = useState(true);
@@ -28,34 +29,18 @@ export default function Chat() {
   const [modalImages, setModalImages] = useState<any[]>([]);
 
   const { token, userId, logout } = useContext(AuthContext);
-  const { sendMessage, subject } = useContext(WsContext);
-  const [newMessage, setNewMessage] = useState<any>();
+  const { sendMessage } = useContext(WsContext);
 
   const chatId = params.id;
 
-  useEffect(() => {
-    if (!newMessage) {
-      return;
-    }
+  useOnWsMessage(({ Type, Payload }: MessageType) => {
+    if (Type !== 'msg' || Payload.ChatId !== chatId) return;
 
-    setMessages([...messages, newMessage]);
-    setNewMessage(null);
-  }, [messages, newMessage]);
+    setMessages([...messages, Payload]);
+  }, [chatId, messages]);
 
   useEffect(() => {
-    const sub = subject.subscribe((msg: any) => {
-      if (msg.Type !== 'msg' || msg.Payload.ChatId !== chatId) {
-        return;
-      }
-
-      setNewMessage(msg.Payload);
-    });
-
-    return () => sub.unsubscribe();
-  }, [chatId]);
-
-  useEffect(() => {
-    get(`chat/${chatId}/messages`, token)
+    getChatMessages(chatId, token)
       .then(result => {
         setMessages([...result])
         setLoadingMessages(false);
@@ -70,7 +55,7 @@ export default function Chat() {
   }, [chatId, token]);
 
   useEffect(() => {
-    get(`chat/${params.id}`, token)
+    getChat(params.id, token)
       .then(result => {
         setUsers(result);
         setLoading(false);
@@ -85,9 +70,7 @@ export default function Chat() {
   }, []);
 
   const send = useCallback(() => {
-    if (!text?.trim() && images.length <= 0) {
-      return;
-    }
+    if (!text?.trim() && images.length <= 0) return;
 
     const payload = {
       chatId,
@@ -108,15 +91,9 @@ export default function Chat() {
 
   const onFileChanged = () => {
     const formData = new FormData();
-    formData.append("image", (imgInpRef?.current as any)?.files[0]);
-    post({
-      path: 'upload',
-      token,
-      payload: formData,
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+    formData.append('image', (imgInpRef?.current as any)?.files[0]);
+
+    uploadMedia(formData, token)
       .then(response => {
         setImages([...images, {
           id: response.mediaId,
@@ -145,10 +122,12 @@ export default function Chat() {
           alignItems: 'center'
         }}>
           <ArrowBackIos style={{ cursor: 'pointer' }} onClick={() => history.push('/chat')}></ArrowBackIos>
-          {users.length === 1 && (<div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => history.push(`/user/${users[0].Id}`)}>
-            <img src={users[0].Image} alt={users[0].Name} style={{ width: 30 }} />
-            <span style={{ marginLeft: 5 }}>{users[0].Name}</span>
-          </div>)}
+          {users.length === 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => history.push(`/user/${users[0].Id}`)}>
+              <img src={users[0].Image} alt={users[0].Name} style={{ width: 30 }} />
+              <span style={{ marginLeft: 5 }}>{users[0].Name}</span>
+            </div>
+          )}
         </div>
         <div style={{
           flex: 1,

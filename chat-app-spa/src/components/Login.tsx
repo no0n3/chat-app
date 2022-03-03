@@ -1,9 +1,9 @@
-import axios from "axios";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useHistory, Link } from "react-router-dom";
 import { TextField, Button, Typography, CircularProgress } from '@material-ui/core';
-import { AuthContext } from "../store/auth-context";
+import { AuthContext } from "../store/AuthContext";
 import { isValidEmail } from "../utils/utils";
+import { login } from "../api/api";
 
 const FIELDS = ['email', 'password'];
 
@@ -17,7 +17,7 @@ export default function Login() {
   const [showErrors, setShowErrors] = useState<any>({});
   const history = useHistory();
 
-  const { login } = useContext(AuthContext);
+  const { loginUser } = useContext(AuthContext);
 
   const markAsTouched = useCallback(() => {
     const result: any = {};
@@ -48,9 +48,7 @@ export default function Login() {
   }, [email, password]);
 
   const onLogin = () => {
-    if (loading) {
-      return;
-    }
+    if (loading) return;
     if (Object.keys(errors).some(field => errors[field])) {
       markAsTouched();
 
@@ -64,7 +62,7 @@ export default function Login() {
       password
     };
 
-    axios.post(`${process.env.REACT_APP_ENDPOINT}/api/login`, payload)
+    login(payload)
       .then(result => result.data)
       .then((result: any) => {
         const token = result.token;
@@ -73,7 +71,7 @@ export default function Login() {
         setPassword('');
         setLoading(false);
 
-        login(token, userId);
+        loginUser(token, userId);
 
         history.push('/');
       })
