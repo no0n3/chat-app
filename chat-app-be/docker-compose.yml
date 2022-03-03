@@ -1,4 +1,12 @@
 services:
+  redis:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6378:6379'
+    command: redis-server --save 20 1 --loglevel warning
+    volumes:
+      - redis:/data
   db:
     image: postgres
     environment:
@@ -32,6 +40,7 @@ services:
     # volumes:
     #   - /home/velizar/WorkspaceTesting/chat-app-be/uploads:/code/uploads
     depends_on:
+      - redis
       - db
       - message_broker
   web2:
@@ -45,6 +54,7 @@ services:
     # volumes:
     #   - /home/velizar/WorkspaceTesting/chat-app-be/uploads:/code/uploads
     depends_on:
+      - redis
       - db
       - message_broker
   web3:
@@ -57,7 +67,10 @@ services:
       - uploadsv:/code/uploads
       # - /home/velizar/WorkspaceTesting/chat-app-be/uploads:/code/uploads
     depends_on:
+      - redis
       - db
       - message_broker
 volumes:
+  redis:
+    driver: local
   uploadsv:

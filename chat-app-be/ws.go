@@ -60,6 +60,7 @@ func wsHandler() {
 		select {
 		case data := <-WS_HUB.addClientChan:
 			WS_HUB.addWSClient(data.userId, data.ws)
+			addUserWsIP(data.userId)
 			go listenForWSMessages(data.userId, data.ws)
 		case data := <-WS_HUB.removeClientChan:
 			WS_HUB.removeWSClient(data.userId, data.ws)
@@ -187,7 +188,41 @@ func handleCreateMessage(userId string, conn *pgxpool.Conn, payload *WsMsg) erro
 		return err
 	}
 
-	MB.sendMessages(result, memberIds)
+	tcpPingNodes(result, memberIds)
+	// MB.sendMessages(result, memberIds)
+
+	return nil
+}
+
+func tcpPingNodes(message []byte, memberIds []string) {
+	// fmt.Println("memberIds:", memberIds)
+	for _, memberId := range memberIds {
+		// fmt.Println("REDIS_CLI.GetUserWsIps(memberId):", memberId, ", ", REDIS_CLI.GetUserWsIps(memberId))
+		for _, ip := range REDIS_CLI.GetUserWsIps(memberId) {
+			localIp, _ := IsLocalIp(ip)
+			// fmt.Println("===>", memberId, ", ", ip, ", ", localIp)
+			if localIp {
+				WS_HUB.sendMessageChan <- WsMessageData{
+					userId:  memberId,
+					message: message,
+				}
+			} else {
+				tcpSendMessage(TcpData{
+					UserId:  memberId,
+					Message: message,
+				}, ip)
+			}
+		}
+	}
+}
+
+func addUserWsIP(userId string) error {
+	ip, err := GetIp()
+	if err != nil {
+		return err
+	}
+
+	REDIS_CLI.UserIpNodeAdd(userId, ip)
 
 	return nil
 }

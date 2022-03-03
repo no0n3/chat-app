@@ -11,6 +11,9 @@ import (
 func main() {
 	initWSHub()
 	initMessageBroker()
+	initRedisCli()
+
+	go tcpListen()
 
 	router := mux.NewRouter()
 
