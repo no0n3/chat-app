@@ -122,19 +122,24 @@ func listenForWSMessages(userId string, ws *websocket.Conn) {
 		fmt.Println("WS MSG RECEIVED:", payload)
 
 		err = db.POOL.HandleFunc(func(conn *pgxpool.Conn) error {
-			tx, err := conn.Begin(context.Background())
-			if err != nil {
-				return err
-			}
 			if payload.Type == "msg" {
-				err := handleCreateMessage(userId, conn, payload)
+				tx, err := conn.Begin(context.Background())
+				if err != nil {
+					return err
+				}
+
+				err = handleCreateMessage(userId, conn, payload)
 				if err != nil {
 					tx.Rollback(context.Background())
 					return err
 				}
-			}
 
-			tx.Commit(context.Background())
+				tx.Commit(context.Background())
+			} else if payload.Type == "ping" {
+				result, _ := json.Marshal(WsMsg{Type: "pong"})
+
+				MB.sendMessages(result, []string{userId})
+			}
 
 			return nil
 		})
